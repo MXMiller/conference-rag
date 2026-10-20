@@ -63,8 +63,9 @@ CREATE INDEX IF NOT EXISTS sentence_embeddings_talk_id_idx
 ON sentence_embeddings(talk_id);
 
 -- Accelerate cosine-distance ordering in match_sentences()
-CREATE INDEX IF NOT EXISTS sentence_embeddings_embedding_hnsw_idx
-ON sentence_embeddings USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS sentence_embeddings_embedding_ivfflat_idx
+ON sentence_embeddings USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 26);
 
 -- Enable Row Level Security
 ALTER TABLE sentence_embeddings ENABLE ROW LEVEL SECURITY;
@@ -105,8 +106,9 @@ ON page_views FOR SELECT
 TO anon, authenticated
 USING (true);
 
--- Create function for similarity search
-CREATE OR REPLACE FUNCTION match_sentences(
+-- Recreate the function so its return type includes the source URL.
+DROP FUNCTION IF EXISTS public.match_sentences(vector, integer);
+CREATE FUNCTION public.match_sentences(
   query_embedding vector(1536),
   match_count int DEFAULT 20
 )
@@ -115,6 +117,7 @@ RETURNS TABLE (
   talk_id uuid,
   title text,
   speaker text,
+  url text,
   text text,
   similarity float
 )
@@ -125,6 +128,7 @@ AS $$
     sentence_embeddings.talk_id,
     sentence_embeddings.title,
     sentence_embeddings.speaker,
+    sentence_embeddings.url,
     sentence_embeddings.text,
     1 - (sentence_embeddings.embedding <=> query_embedding) as similarity
   FROM sentence_embeddings

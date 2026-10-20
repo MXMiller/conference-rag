@@ -36,6 +36,17 @@ Deno.serve(async (request: Request) => {
     }
 
     const body = await request.json().catch(() => null);
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
+
+    // Readiness probe: validate deployment, auth, and secret configuration
+    // without making a billable OpenAI request.
+    if (body?.health_check === true) {
+      if (!apiKey) {
+        return jsonResponse({ error: "OpenAI API key is not configured" }, 500, origin);
+      }
+      return jsonResponse({ ok: true }, 200, origin);
+    }
+
     const question = typeof body?.question === "string" ? body.question.trim() : "";
     const contextTalks = body?.context_talks;
 
@@ -73,7 +84,6 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ error: "The provided talk context is too long" }, 400, origin);
     }
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
       return jsonResponse({ error: "OpenAI API key is not configured" }, 500, origin);
     }
