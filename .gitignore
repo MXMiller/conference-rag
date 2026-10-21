@@ -43,8 +43,6 @@ __pycache__/
 
 # Secrets (NEVER commit these!)
 config.secret.json
-p.txt
-codex_convo.md
 
 # Intermediate data outputs
 scripts/output/
