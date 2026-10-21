@@ -30,9 +30,15 @@ AS $$
 $$;
 
 -- IVFFlat builds faster and uses less memory than HNSW for this dataset size.
+-- The default maintenance_work_mem (32 MB on this project) is below the
+-- 61 MB required for this index build. This setting applies to this session.
+SET maintenance_work_mem = '128MB';
+
 CREATE INDEX IF NOT EXISTS sentence_embeddings_embedding_ivfflat_idx
 ON public.sentence_embeddings USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 26);
+
+RESET maintenance_work_mem;
 
 ANALYZE public.sentence_embeddings;
 

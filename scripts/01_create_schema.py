@@ -63,6 +63,7 @@ CREATE INDEX IF NOT EXISTS sentence_embeddings_talk_id_idx
 ON sentence_embeddings(talk_id);
 
 -- Accelerate cosine-distance ordering in match_sentences()
+SET maintenance_work_mem = '128MB';
 CREATE INDEX IF NOT EXISTS sentence_embeddings_embedding_ivfflat_idx
 ON sentence_embeddings USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 26);
